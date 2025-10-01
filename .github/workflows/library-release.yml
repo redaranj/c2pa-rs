@@ -49,8 +49,10 @@ jobs:
 
       - name: Set up Rust
         uses: actions-rust-lang/setup-rust-toolchain@v1
-        with:
-          cache: false
+
+      - name: Set CARGO_TARGET_DIR for Android builds
+        if: contains(matrix.target, 'android')
+        run: echo "CARGO_TARGET_DIR=${{ github.workspace }}/target-${{ matrix.target }}" >> $GITHUB_ENV
 
       - name: Build Windows release
         if: matrix.os == 'windows-latest'
@@ -69,7 +71,15 @@ jobs:
         if: matrix.os != 'windows-latest' && matrix.os != 'windows-11-arm'
         run: make release TARGET=${{ matrix.target }}
 
-      - name: Upload build artifacts
+      - name: Upload build artifacts (Android)
+        if: contains(matrix.target, 'android')
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts-${{ matrix.os }}-${{ matrix.target }}
+          path: target-${{ matrix.target }}/artifacts/
+
+      - name: Upload build artifacts (Non-Android)
+        if: "!contains(matrix.target, 'android')"
         uses: actions/upload-artifact@v4
         with:
           name: release-artifacts-${{ matrix.os }}-${{ matrix.target }}
